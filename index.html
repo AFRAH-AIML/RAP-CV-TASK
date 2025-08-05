@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Analysis UI</title>
+    <script src="https://kit.fontawesome.com/a076d05399.js" crossorigin="anonymous"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Roboto:wght@300;400;700&display=swap');
+
+        body {
+            font-family: 'Roboto', sans-serif;
+            background-color: #f0f2f5;
+            color: #333;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+
+        header {
+            background-color: #fff;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+
+        h1 {
+            color: #1a73e8;
+            margin: 0;
+        }
+
+        main {
+            flex: 1;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .video-container {
+            width: 100%;
+            max-width: 800px;
+            background-color: #000;
+            border-radius: 8px;
+            overflow: hidden;
+            position: relative;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+
+        #videoPlayer {
+            width: 100%;
+            display: block; /* Make it visible by default */
+            background-color: #000;
+            height: 450px;
+        }
+
+        .placeholder {
+            width: 100%;
+            height: 450px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #fff;
+            font-size: 1.2rem;
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none; /* Allows clicks to go through to the video player if needed */
+        }
+
+        #videoPlayer:not([src]) + .placeholder {
+            display: flex;
+        }
+
+        #videoPlayer[src] + .placeholder {
+            display: none;
+        }
+
+
+        .controls {
+            margin-top: 1.5rem;
+            display: flex;
+            gap: 1rem;
+            align-items: center;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .custom-file-upload {
+            background-color: #1a73e8;
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            transition: background-color 0.3s;
+        }
+
+        .custom-file-upload:hover {
+            background-color: #155ab3;
+        }
+
+        .process-btn {
+            background-color: #28a745;
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 500;
+            transition: background-color 0.3s;
+        }
+
+        .process-btn:disabled {
+            background-color: #cccccc;
+            cursor: not-allowed;
+        }
+
+        .process-btn:not(:disabled):hover {
+            background-color: #218838;
+        }
+
+        .stats-container {
+            display: flex;
+            gap: 1rem;
+            margin-top: 2rem;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .stat-card {
+            background-color: #fff;
+            padding: 1.5rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+            min-width: 200px;
+        }
+
+        .stat-card h3 {
+            margin: 0 0 0.5rem 0;
+            color: #555;
+            font-weight: 400;
+        }
+
+        .stat-card p {
+            margin: 0;
+            font-size: 2rem;
+            font-weight: 700;
+            color: #1a73e8;
+        }
+
+        footer {
+            text-align: center;
+            padding: 1rem;
+            background-color: #fff;
+            box-shadow: 0 -2px 4px rgba(0,0,0,0.1);
+            margin-top: auto;
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <h1>Video Analysis Dashboard</h1>
+    </header>
+    <main>
+        <div class="video-container">
+            <video id="videoPlayer" controls></video>
+            <div id="placeholder" class="placeholder">
+                <p>Upload a video to begin analysis</p>
+            </div>
+        </div>
+        <div class="controls">
+            <input type="file" id="videoUpload" accept="video/*" class="file-input">
+            <label for="videoUpload" class="custom-file-upload">
+                <i class="fas fa-upload"></i> Choose Video
+            </label>
+            <button id="processButton" class="process-btn" disabled>Process Video</button>
+        </div>
+        <div class="stats-container">
+            <div class="stat-card">
+                <h3>Active Persons</h3>
+                <p id="activePersons">0</p>
+            </div>
+            <div class="stat-card">
+                <h3>Frames Per Second (FPS)</h3>
+                <p id="fps">0.00</p>
+            </div>
+        </div>
+    </main>
+    <footer>
+        <p>&copy; 2025 Video Analysis Inc. | Mevalurkuppam, Tamil Nadu</p>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const videoUpload = document.getElementById('videoUpload');
+            const processButton = document.getElementById('processButton');
+            const videoPlayer = document.getElementById('videoPlayer');
+            const placeholder = document.getElementById('placeholder');
+            const uploadLabel = document.querySelector('.custom-file-upload');
+
+            let videoFile = null;
+
+            videoUpload.addEventListener('change', (event) => {
+                videoFile = event.target.files[0];
+                if (videoFile) {
+                    const fileURL = URL.createObjectURL(videoFile);
+                    videoPlayer.src = fileURL;
+                    processButton.disabled = false;
+                    processButton.textContent = 'Process Video';
+                    uploadLabel.textContent = videoFile.name.length > 20 ? videoFile.name.substring(0, 17) + '...' : videoFile.name;
+                }
+            });
+
+            processButton.addEventListener('click', async () => {
+                if (!videoFile) {
+                    alert('Please select a video file first.');
+                    return;
+                }
+
+                // Provide UI feedback that processing has started
+                processButton.disabled = true;
+                processButton.textContent = 'Processing...';
+                placeholder.innerHTML = '<p>Processing... Please wait.</p>';
+                placeholder.style.display = 'flex'; // Show processing message
+
+                // Create a FormData object to send the file
+                const formData = new FormData();
+                formData.append('video', videoFile);
+
+                try {
+                    // Send the request to the Flask backend using fetch
+                    // The request goes to the '/process-video' endpoint you created in main.py
+                    const response = await fetch('/process-video', {
+                        method: 'POST',
+                        body: formData,
+                    });
+
+                    if (!response.ok) {
+                        throw new Error(`Server responded with status: ${response.status}`);
+                    }
+                    
+                    // Get the processed video file back as a Blob
+                    const videoBlob = await response.blob();
+                    const processedVideoURL = URL.createObjectURL(videoBlob);
+
+                    // Display the processed video
+                    videoPlayer.src = processedVideoURL;
+                    videoPlayer.load();
+                    videoPlayer.play();
+                    alert('Processing complete! Displaying the analyzed video.');
+
+                } catch (error) {
+                    console.error('Error during video processing:', error);
+                    alert(`An error occurred during processing: ${error.message}`);
+                    placeholder.innerHTML = '<p>An error occurred. Please try again.</p>';
+                } finally {
+                    // Re-enable the button and hide placeholder
+                    processButton.disabled = false;
+                    processButton.textContent = 'Process Video';
+                    if (videoPlayer.src) {
+                        placeholder.style.display = 'none';
+                    }
+                }
+            });
+        });
+    </script>
+</body>
+</html>
